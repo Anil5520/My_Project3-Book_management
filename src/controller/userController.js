@@ -125,7 +125,7 @@ const createUser = async function (req, res) {
     return res.status(500).send({ status: false, msg: err.message })
   }
 }
-
+ 
 
 
 //========================================= 2-Login and Token Generation Api =====================================//
