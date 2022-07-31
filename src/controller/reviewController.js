@@ -10,26 +10,24 @@ const createReview = async function (req, res) {
     try {
 
         let data = req.body;
-        data.reviewedAt = Date.now()
-        data.bookId = req.params.bookId;
-
-
-        //create review validations
-        if (Object.keys(data).length == 0) {
-            return res.status(400).send({ status: false, message: "body can not be empty" });
-        }
-
+        bookId = req.params.bookId;
+        
         // Checks if valid bookId
-        if (!mongoose.isValidObjectId(data.bookId)) {
+        if (!mongoose.isValidObjectId(bookId)) {
             return res.status(400).send({ status: false, message: "write valid objectId" });
         }
+        
         //check wheather given bookId is present in DB or not
-        let checkBookId = await booksModel.findOne({ _id: data.bookId, isDeleted: false })
+        let checkBookId = await booksModel.findOne({ _id: bookId, isDeleted: false })
         if (!checkBookId) {
             return res.status(400).send({ status: false, message: "write valid bookId that are present in your collections or not deleted" });
         }
 
-        // Checks if valid bookId
+        //create review validations
+        if (Object.keys(data).length == 0) {
+            return res.status(400).send({ status: false, message: "Body cannot be empty" });
+        }
+              
         if (!data.rating) {
             return res.status(400).send({ status: false, message: "Write rating" });
         }
@@ -39,7 +37,9 @@ const createReview = async function (req, res) {
         if ((data.rating < 1) || (data.rating > 5)) {
             return res.status(400).send({ status: false, message: "You can give rating more than 0  or less than 5 in number only" });
         }
-
+        
+        data.reviewedAt = Date.now()
+        data.bookId=bookId
         //review creation
         let save = await reviewModel.create(data);
 
@@ -164,7 +164,7 @@ let deleteReview = async function (req, res) {
 
         review.isDeleted = true
         review.save()
-        let deleted = await booksModel.findOneAndUpdate({ _id: bId }, { $set: { reviews: previousReview - 1 } }, { new: true })
+        await booksModel.findOneAndUpdate({ _id: bId }, { $set: { reviews: previousReview - 1 } }, { new: true })
 
         res.status(200).send({ status: true, message: "review deleted successfully" })
     }

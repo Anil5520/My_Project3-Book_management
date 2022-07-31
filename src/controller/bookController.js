@@ -58,19 +58,8 @@ let uploadFile = async (file) => {
 const createBook = async function (req, res) {
   try {
     const data = req.body;
-
     const files = req.files
-    if (files && files.length > 0) {
-      //upload to s3 and get the uploaded link
-      // res.send the link back to frontend/postman
-      let uploadedFileURL = await uploadFile(files[0])
-      data.bookCover = uploadedFileURL
-    }
-    else {
-      res.status(400).send({ msg: "No file found" })
-    }
-
-
+    
     //Book validation start
     if (Object.keys(data).length == 0) {
       return res.status(400).send({ status: false, message: "Body cannot be empty" });
@@ -85,13 +74,7 @@ const createBook = async function (req, res) {
     let validTitle = /^\d*[a-zA-Z][a-zA-Z\d\s]*$/;
     if (!validTitle.test(title)) {
       return res.status(400).send({ status: false, message: "The Title may contain letters and numbers, not only numbers" });
-    }
-    // Checks whether title is present in book collection or not(for duplicate title)
-    let duplicateTitle = await booksModel.findOne({ title: title });
-    if (duplicateTitle) {
-      return res.status(400).send({ status: false, message: `${title} already exists` });
-    }
-
+    }    
 
     // Checks if excerpt is empty or entered as a string
     if (!isValid(data.excerpt)) {
@@ -101,7 +84,6 @@ const createBook = async function (req, res) {
     if (data.excerpt.length <= 10) {
       return res.status(400).send({ status: false, message: "The excerpt should contain at least 10 characters or more than 10" });
     }
-
 
     // Checks if userId is empty or contains valid userId
     let userId = req.body.userId;
@@ -115,12 +97,6 @@ const createBook = async function (req, res) {
     if (userId != req.userId) {
       return res.status(403).send({ status: false, message: "Unauthorised access" })
     }
-    // Checks whether userId is present in user collection or not
-    let checkuserId = await userModel.findById(userId);
-    if (!checkuserId) {
-      return res.status(404).send({ status: false, message: "Entered user not found" });
-    }
-
 
     // Checks if ISBN is empty or entered as a string or contains valid ISBN
     let ISBN = data.ISBN
@@ -132,13 +108,7 @@ const createBook = async function (req, res) {
     if (!validISBN.test(ISBN)) {
       return res.status(400).send({ status: false, message: "The ISBN may contain only numbers in string and of 13 digit only" });
     }
-    // Checks whether ISBN is present in book collection or not(for duplicate ISBN)
-    let duplicateISBN = await booksModel.findOne({ ISBN: ISBN });
-    if (duplicateISBN) {
-      return res.status(400).send({ status: false, message: `${ISBN} already exists` });
-    }
-
-
+    
     // Checks if category is empty or entered as a string or contains valid Category
     if (!isValid(data.category)) {
       return res.status(400).send({ status: false, message: "Please Enter valid Category" });
@@ -148,7 +118,6 @@ const createBook = async function (req, res) {
     if (!validCategory.test(data.category)) {
       return res.status(400).send({ status: false, message: "The Category may contain only letters" });
     }
-
 
     // Checks if subCategory is empty or entered as a string or contains valid subCategory
     if (!isValid(data.subcategory)) {
@@ -164,7 +133,6 @@ const createBook = async function (req, res) {
       }
     }
 
-
     // Checks if releasedAt is empty or entered as a string or contains valid releasedAt
     if (!isValid(data.releasedAt)) {
       return res.status(400).send({ status: false, message: "releasedAt date must be present" })
@@ -173,6 +141,31 @@ const createBook = async function (req, res) {
       return res.status(400).send({ status: false, message: "releasedAt should be in YYYY-MM-DD format" })
     }
 
+    // Checks whether title is present in book collection or not(for duplicate title)
+    let duplicateTitle = await booksModel.findOne({ title: title });
+    if (duplicateTitle) {
+      return res.status(400).send({ status: false, message: `Title '${title}' already exists` });
+    }
+
+    // Checks whether userId is present in user collection or not
+    let checkuserId = await userModel.findById(userId);
+    if (!checkuserId) {
+      return res.status(404).send({ status: false, message: "Entered user not found" });
+    }
+
+    // Checks whether ISBN is present in book collection or not(for duplicate ISBN)
+    let duplicateISBN = await booksModel.findOne({ ISBN: ISBN });
+    if (duplicateISBN) {
+      return res.status(400).send({ status: false, message: `ISBN '${ISBN}' already exists` });
+    }
+
+    if (files && files.length > 0) {
+      //upload to s3 and get the uploaded link
+      // res.send the link back to frontend/postman
+      let uploadedFileURL = await uploadFile(files[0])
+      data.bookCover = uploadedFileURL
+    }  //bookCover is not mandatory here, if it is then following should be done
+    // else {return res.status(400).send({ msg: "No file found" })}
 
     //book creation
     let savedData = await booksModel.create(data)
@@ -272,10 +265,10 @@ const getById = async function (req, res) {
 const updateBooks = async function (req, res) {
   try {
     let bookId = req.params.bookId
-
-    let { title, excerpt, releasedAt, ISBN } = req.body
-    if (!isValidBody(req.body)) {
-      return res.status(400).send({ status: false, message: "enter data to be updated" })
+    let data=req.body
+    let { title, excerpt, releasedAt, ISBN } = data
+    if (Object.keys(data).length == 0) {
+      return res.status(400).send({ status: false, message: "Body cannot be empty" });
     }
 
     let book = await booksModel.findById(bookId)

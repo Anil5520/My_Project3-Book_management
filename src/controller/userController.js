@@ -51,7 +51,7 @@ const createUser = async function (req, res) {
     if (!isValid(data.phone)) {
       return res.status(400).send({ status: false, message: "Please Enter valid Phone Number" });
     }
-    let validPhone = /^(\+?\d{1,4}[\s-])?(?!0+\s+,?$)\d{10}\s*,?$/
+    let validPhone = /^[6-9]\d{9}$/
     if (!validPhone.test(data.phone)) {
       return res.status(400).send({ status: false, message: "The user phone number should be indian may contain only 10 number" });
     }
@@ -82,7 +82,7 @@ const createUser = async function (req, res) {
     }
     let validPassword = /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{8,15}$/;
     if (!validPassword.test(data.password)) {
-      return res.status(400).send({ status: false, message: "Please enter min 8 letter password, with at least a symbol, upper and lower case letters and a number" });
+      return res.status(400).send({ status: false, message: "Please enter password in range of '8-15', with at least a symbol, upper and lower case letters and a number" });
     }
 
 
@@ -92,20 +92,23 @@ const createUser = async function (req, res) {
         return res.status(400).send({ status: false, message: "Address cannot be empty" });
       }
       if (typeof data.address != "object") {
-        return res.status(400).send({ status: false, msg: "Address body  should be in object form" });
+        return res.status(400).send({ status: false, msg: "Address body should be in object form" });
       }
+
       if (!addressValid(data.address.street)) {
         return res.status(400).send({ status: false, message: "street value should not be a number or boolean or empty space" })
       }
       if (!/^\d*[a-zA-Z\d\s,.]*$/.test(data.address.street)) {
         return res.status(400).send({ status: false, message: "The street name may contain only letters" });
       }
+
       if (!addressValid(data.address.city)) {
         return res.status(400).send({ status: false, message: "city value should not be a number or boolean or empty space" })
       }
       if (!/^\w[a-zA-Z.,\s]*$/.test(data.address.city)) {
         return res.status(400).send({ status: false, message: "The city name may contain only letters" });
       }
+
       if (!addressValid(data.address.pincode)) {
         return res.status(400).send({ status: false, message: "pincode value should not be a number or boolean or empty space" })
       }
@@ -114,7 +117,6 @@ const createUser = async function (req, res) {
         return res.status(400).send({ status: false, message: " Please Enter Valid Pincode Of 6 Digits" });
       }
     }
-
 
     //user creation
     let savedData = await userModel.create(data)
@@ -125,7 +127,7 @@ const createUser = async function (req, res) {
     return res.status(500).send({ status: false, msg: err.message })
   }
 }
- 
+
 
 
 //========================================= 2-Login and Token Generation Api =====================================//
@@ -153,7 +155,7 @@ const loginUser = async function (req, res) {
     //Finding credentials 
     let user = await userModel.findOne({ email: email, password: password })
     if (!user) {
-      return res.status(401).send({ status: false, msg: "Invalid email or password" })
+      return res.status(401).send({ status: false, msg: "Invalid credential" })
     }
 
     //Token generation
@@ -165,7 +167,6 @@ const loginUser = async function (req, res) {
       "4A group"
     );
     // res.setHeader("x-api-key", token);
-
     return res.status(200).send({ status: true, data: { token } });
   }
   catch (err) {
